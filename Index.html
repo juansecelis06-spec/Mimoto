@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Mi Moto Shop</title>
+  <meta name="description" content="Tienda demo de motociclismo con filtro, carrito, totales y pago sandbox. HTML/CSS/JS vanilla."/>
+
+  <style>
+    /* ====== PALETA MARCA (tu paleta) ====== */
+    :root{
+      --morado:#7A50FF;         /* Morado Principal */
+      --morado-2:#A873FF;       /* Morado Secundario */
+      --gris:#333333;           /* Gris Principal (texto alto contraste) */
+      --gris-medio:#777777;     /* Gris Medio */
+      --gris-claro:#E0E0E0;     /* Gris Claro */
+      --blanco:#FFFFFF;         /* Blanco */
+      --beige:#F5F0E6;          /* Beige cálido */
+      --beige-osc:#D9D1C3;      /* Beige más oscuro */
+
+      /* Mapeo a la UI */
+      --bg:var(--blanco);                 /* Fondo global */
+      --panel:var(--beige);               /* Paneles */
+      --card:#ffffff;                     /* Tarjetas/producto */
+      --text:var(--gris);                 /* Texto principal */
+      --muted:var(--gris-medio);         /* Texto secundario */
+      --accent:var(--morado);             /* Acento/links */
+      --accent-2:var(--morado-2);         /* Hover/gradiente */
+      --border:var(--gris-claro);         /* Bordes suaves */
+      --ok:#28a745;                       /* OK (añadir) */
+      --warn:#dc3545;                     /* Peligro (eliminar) */
+      --info:#0d6efd;                     /* Info (fallback) */
+
+      /* Mensajes informativos con la gama beige */
+      --info-bg:var(--beige);
+      --info-border:var(--beige-osc);
+      --info-text:var(--gris);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      margin:0; color:var(--text); background:var(--bg);
+      padding:20px;
+    }
+
+    /* Header */
+    header{
+      background:linear-gradient(135deg,var(--beige),#fff);
+      border:1px solid var(--border);
+      padding:18px; border-radius:16px; margin-bottom:20px;
+    }
+    h1{margin:0 0 6px; color:var(--accent); letter-spacing:.3px}
+    header p{margin:2px 0 0; color:var(--muted)}
+    .brand-badge{
+      display:inline-block; padding:6px 10px; border-radius:999px;
+      background:var(--morado-2); color:#fff; font-weight:600; font-size:.85rem;
+      margin-bottom:8px;
+    }
+
+    /* Filtros */
+    .filtros{margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    label[for="categoria"]{font-weight:600}
+    select{
+      background:#fff; color:var(--text); border:1px solid var(--border); border-radius:10px;
+      padding:10px 12px; outline:none;
+    }
+    select:focus{box-shadow:0 0 0 3px color-mix(in oklab, var(--accent) 30%, transparent)}
+
+    /* Grilla productos */
+    #productos{
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+      gap:16px; margin-top:14px;
+    }
+    .producto{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px;
+      transition:transform .15s ease, box-shadow .15s ease;
+    }
+    .producto:hover{transform:translateY(-2px); box-shadow:0 6px 24px rgba(122,80,255,.12)}
+    .producto img{
+      width:100%; height:220px; object-fit:cover; border-radius:10px; background:var(--gris-claro);
+    }
+    .producto h3{margin:4px 0 0; font-size:1rem}
+    .precio{color:var(--accent); font-weight:700}
+
+    .button{
+      margin-top:auto;
+      background:linear-gradient(135deg,var(--morado),var(--morado-2));
+      border:none; color:#fff; padding:10px 12px; border-radius:10px; cursor:pointer;
+      font-weight:700;
+    }
+    .button:hover{filter:brightness(1.05)}
+    .badge-cat{
+      display:inline-block; font-size:.75rem; padding:4px 8px; border-radius:999px;
+      background:color-mix(in oklab, var(--morado-2) 20%, #fff); color:var(--accent);
+      border:1px solid color-mix(in oklab, var(--morado-2) 35%, #fff);
+    }
+
+    /* Carrito */
+    .carrito{
+      background:var(--panel);
+      border:1px solid var(--border);
+      padding:18px; border-radius:16px; margin-top:28px;
+    }
+    .carrito h2{margin:0 0 8px}
+    #lista-carrito{list-style:none; padding:0; margin:12px 0 0}
+    #lista-carrito li{
+      background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px;
+      display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;
+    }
+    .qty{display:flex; align-items:center; gap:6px}
+    .qty button{
+      border:1px solid var(--border); background:transparent; color:var(--text);
+      border-radius:8px; padding:6px 10px; cursor:pointer; font-weight:700;
+    }
+    .qty button:hover{background:#f7f7f7}
+    .remove{background:var(--warn); color:#fff; border:none; border-radius:8px; padding:6px 10px; cursor:pointer}
+
+    .totales p{margin:6px 0; color:var(--gris)}
+    .totales .total{font-size:1.1rem; color:var(--accent); font-weight:800}
+
+    .acciones{display:flex; gap:10px; margin-top:10px; flex-wrap:wrap}
+    .vaciar{background:var(--warn); color:#fff; border:none; padding:10px 12px; border-radius:10px; cursor:pointer}
+    .finalizar{background:var(--morado-2); color:#fff; border:none; padding:10px 12px; border-radius:10px; cursor:pointer}
+
+    .pago{margin-top:16px; background:#fff; border:1px dashed var(--border); padding:12px; border-radius:12px}
+
+    /* Mensajes / hints con beige informativo */
+    .hint{
+      background:var(--info-bg); border:1px solid var(--info-border);
+      padding:12px; border-radius:10px; color:var(--info-text);
+    }
+
+    /* Accesibilidad de foco */
+    :focus-visible{outline:3px solid color-mix(in oklab, var(--morado) 50%, transparent); outline-offset:2px}
+  </style>
+</head>
+<body>
+  <header role="banner">
+    <span class="brand-badge">Mi Moto Shop</span>
+    <h1>Accesorios y repuestos para tu moto</h1>
+
+    <div class="filtros" role="region" aria-label="Filtros">
+      <label for="categoria">Filtrar por categoría:</label>
+      <select id="categoria" name="categoria" aria-label="Filtrar por categoría">
+        <option value="todos">Todos</option>
+        <option value="Accesorios">Accesorios</option>
+        <option value="Protección">Protección</option>
+        <option value="Mantenimiento">Mantenimiento</option>
+        <option value="Repuestos">Repuestos</option>
+      </select>
+    </div>
+
+    <p>Equipo, mantenimiento y repuestos con estilo 💜</p>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <section id="productos" aria-live="polite" aria-busy="false"></section>
+
+    <section class="carrito" aria-label="Carrito de compras">
+      <h2>🛒 Carrito</h2>
+      <p><strong>Productos en carrito: <span id="cantidad-carrito">0</span></strong></p>
+      <ul id="lista-carrito"></ul>
+
+      <div class="totales">
+        <p>Subtotal: <strong id="subtotal-text">$0,00</strong></p>
+        <p>Descuento: <strong id="descuento-text">$0,00</strong></p>
+        <p>Impuestos (IVA): <strong id="impuestos-text">$0,00</strong></p>
+        <p class="total">Total: <strong id="total-text">$0,00</strong></p>
+      </div>
+
+      <div class="acciones">
+        <button id="btn-vaciar" class="vaciar" type="button">🧼 Vaciar</button>
+        <button id="btn-finalizar" class="finalizar" type="button">✅ Finalizar</button>
+      </div>
+
+      <div class="pago">
+        <h3>💳 Método de pago</h3>
+        <div id="paypal-button-container" style="margin-top:10px; display:none;"></div>
+        <p class="hint" role="note">
+          ⚠️ Sandbox: por defecto usamos el Client ID <code>sb</code>. Si tu sandbox/producción no acepta COP, cambia <code>PAYPAL_CURRENCY</code> a <code>'USD'</code>.
+        </p>
+      </div>
+    </section>
+
+    <div id="hints-vacios" class="hint" style="margin-top:16px;display:none"></div>
+  </main>
+
+  <!-- SDK PayPal (sandbox). Cambia "sb" por tu client-id de pruebas/producción -->
+  <script src="https://www.paypal.com/sdk/js?client-id=sb&components=buttons,funding-eligibility"></script>
+
+  <script>
+    /* =========================
+       CONFIGURACIÓN
+       ========================= */
+    const MONEDA   = 'COP';      // Visualización: 'COP' o 'USD'
+    const PAYPAL_CURRENCY = 'COP'; // Si tu cuenta sandbox no acepta COP, usa 'USD'
+    const LOCALE   = 'es-CO';
+    const TAX_RATE = 0.19;       // IVA (Colombia): 0.19 ; si no aplica, pon 0
+    const DESCUENTO = 0.00;      // Descuento fijo opcional
+
+    /* =========================
+       DATASET - MI MOTO
+       id, nombre, precio (Number), categoria (String), img (URL)
+       ========================= */
+    const productos = [
+      { id: 1, nombre: "Casco Integral ProTech",       precio: 320000, categoria: "Protección",   img: "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=1200&auto=format&fit=crop" },
+      { id: 2, nombre: "Guantes Racing Antishock",     precio:  89000, categoria: "Protección",   img: "https://images.unsplash.com/photo-1595347097560-69238724e7b0?q=80&w=1200&auto=format&fit=crop" },
+      { id: 3, nombre: "Kit Cadena + Sprockets",       precio: 280000, categoria: "Repuestos",    img: "https://images.unsplash.com/photo-1615729947596-a598e5de0e8a?q=80&w=1200&auto=format&fit=crop" },
+      { id: 4, nombre: "Aceite 10W-40 Sintético 1L",   precio:  65000, categoria: "Mantenimiento",img: "https://images.unsplash.com/photo-1611843366185-063f9b867718?q=80&w=1200&auto=format&fit=crop" },
+      { id: 5, nombre: "Top Case 45L con Base",        precio: 420000, categoria: "Accesorios",   img: "https://images.unsplash.com/photo-1622470954790-2ed6dfa818ab?q=80&w=1200&auto=format&fit=crop" },
+      { id: 6, nombre: "Soporte Celular Antivibración",precio:  70000, categoria: "Accesorios",   img: "https://images.unsplash.com/photo-1603566234499-c8c2f0a3fc89?q=80&w=1200&auto=format&fit=crop" },
+      { id: 7, nombre: "Kit Pastillas de Freno",       precio:  95000, categoria: "Repuestos",    img: "https://images.unsplash.com/photo-1627409335873-f6c9c24a561d?q=80&w=1200&auto=format&fit=crop" },
+      { id: 8, nombre: "Luces LED H4 Ultra",           precio: 120000, categoria: "Accesorios",   img: "https://images.unsplash.com/photo-1586158081080-bb769c8e6510?q=80&w=1200&auto=format&fit=crop" },
+      { id: 9, nombre: "Impermeable 2 Piezas Touring", precio: 110000, categoria: "Protección",   img: "https://images.unsplash.com/photo-1549294413-26f195200c16?q=80&w=1200&auto=format&fit=crop" },
+      { id:10, nombre: "Llanta Trasera 140/70-17",     precio: 360000, categoria: "Repuestos",    img: "https://images.unsplash.com/photo-1618920989358-c0bf6bff8e62?q=80&w=1200&auto=format&fit=crop" },
+    ];
+
+    /* =========================
+       ESTADO + SELECTORES
+       ========================= */
+    let carrito = new Map();
+
+    const el = {
+      contProds: document.getElementById('productos'),
+      lista:     document.getElementById('lista-carrito'),
+      subtotal:  document.getElementById('subtotal-text'),
+      impuestos: document.getElementById('impuestos-text'),
+      descuento: document.getElementById('descuento-text'),
+      total:     document.getElementById('total-text'),
+      cantidad:  document.getElementById('cantidad-carrito'),
+      select:    document.getElementById('categoria'),
+      btnVaciar: document.getElementById('btn-vaciar'),
+      btnFinal:  document.getElementById('btn-finalizar'),
+      paypal:    document.getElementById('paypal-button-container'),
+      hints:     document.getElementById('hints-vacios')
+    };
+
+    const money = new Intl.NumberFormat(LOCALE, { style: 'currency', currency: MONEDA });
+
+    /* =========================
+       RENDER DE PRODUCTOS
+       ========================= */
+    function renderProductos(lista){
+      el.contProds.setAttribute('aria-busy','true');
+      el.contProds.innerHTML = '';
+
+      if (!Array.isArray(lista) || lista.length === 0){
+        el.hints.style.display = 'block';
+        el.hints.innerHTML = '👋 Aún no has agregado productos. Edita el array <code>productos</code> y añade 6–12 ítems.';
+        el.contProds.setAttribute('aria-busy','false');
+        return;
+      } else {
+        el.hints.style.display = 'none';
+      }
+
+      lista.forEach(p=>{
+        const card = document.createElement('article');
+        card.className = 'producto';
+        card.innerHTML = `
+          <img src="${p.img}" alt="${p.nombre}">
+          <div class="badge-cat">${p.categoria}</div>
+          <h3>${p.nombre}</h3>
+          <p class="precio">${money.format(Number(p.precio)||0)}</p>
+          <button class="button" data-add="${p.id}">Agregar al carrito</button>
+        `;
+        const img = card.querySelector('img');
+        img.addEventListener('error', ()=>{
+          img.src = 'https://via.placeholder.com/600x400?text=Producto';
+          img.alt = p.nombre + ' (imagen no disponible)';
+        });
+        el.contProds.appendChild(card);
+      });
+
+      el.contProds.setAttribute('aria-busy','false');
+    }
+
+    /* =========================
+       FILTRO POR CATEGORÍA
+       ========================= */
+    function filtrar(){
+      const sel = el.select.value;
+      const data = sel === 'todos' ? productos : productos.filter(p => String(p.categoria) === sel);
+      renderProductos(data);
+      localStorage.setItem('filtro_categoria', sel);
+    }
+
+    function cargarFiltro(){
+      const f = localStorage.getItem('filtro_categoria');
+      if (f) el.select.value = f;
+    }
+
+    /* =========================
+       CARRITO + TOTALES
+       ========================= */
+    function persist(){ localStorage.setItem('carrito', JSON.stringify(Array.from(carrito.entries()))); }
+    function load(){
+      const data = localStorage.getItem('carrito');
+      if (data){ carrito = new Map(JSON.parse(data)); }
+    }
+
+    function totales(){
+      const subtotal = [...carrito.values()].reduce((a,i)=> a + Number(i.precio||0)*Number(i.cantidad||0), 0);
+      const desc = Math.min(DESCUENTO, subtotal);
+      const base = subtotal - desc;
+      const impuestos = +(base * TAX_RATE).toFixed(2);
+      const total = +(base + impuestos).toFixed(2);
+      const cantidad = [...carrito.values()].reduce((a,i)=> a + Number(i.cantidad||0), 0);
+      return { subtotal, descuento: desc, impuestos, total, cantidad };
+    }
+
+    function pintarCarrito(){
+      el.lista.innerHTML = '';
+      carrito.forEach(it=>{
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span>${it.nombre} — ${money.format(it.precio)} x ${it.cantidad}</span>
+          <div class="qty">
+            <button aria-label="Disminuir" data-dec="${it.id}">−</button>
+            <span>${it.cantidad}</span>
+            <button aria-label="Aumentar" data-inc="${it.id}">+</button>
+            <button class="remove" aria-label="Eliminar" data-del="${it.id}">❌</button>
+          </div>`;
+        el.lista.appendChild(li);
+      });
+      const {subtotal,descuento,impuestos,total,cantidad} = totales();
+      el.subtotal.textContent  = money.format(subtotal);
+      el.descuento.textContent = money.format(descuento);
+      el.impuestos.textContent = money.format(impuestos);
+      el.total.textContent     = money.format(total);
+      el.cantidad.textContent  = cantidad;
+
+      el.paypal.style.display = total > 0 ? 'block' : 'none';
+      renderPayPal(total);
+    }
+
+    function add(id){
+      const p = productos.find(x=> x.id === id);
+      if(!p) return alert('Producto no encontrado. Revisa tu array "productos".');
+      const it = carrito.get(id);
+      if (it) it.cantidad++; else carrito.set(id, {...p, cantidad:1});
+      persist(); pintarCarrito();
+    }
+    function dec(id){
+      const it = carrito.get(id); if(!it) return;
+      it.cantidad--; if (it.cantidad<=0) carrito.delete(id);
+      persist(); pintarCarrito();
+    }
+    function del(id){ carrito.delete(id); persist(); pintarCarrito(); }
+
+    /* =========================
+       PAYPAL (sandbox)
+       ========================= */
+    let paypalRenderedTotal = null;
+    function renderPayPal(total){
+      if(!window.paypal) return;
+      if(total <= 0){ paypalRenderedTotal=null; el.paypal.innerHTML=''; return; }
+      if(paypalRenderedTotal === total && el.paypal.childElementCount > 0) return;
+
+      paypalRenderedTotal = total;
+      el.paypal.innerHTML = '';
+      paypal.Buttons({
+        style:{ layout:'vertical', color:'silver', shape:'rect', label:'paypal' },
+        createOrder:(data,actions)=>actions.order.create({
+          purchase_units:[{ amount:{ value: total.toFixed(2), currency_code: PAYPAL_CURRENCY } }]
+        }),
+        onApprove:(data,actions)=>actions.order.capture().then(d=>{
+          alert(`¡Gracias ${d?.payer?.name?.given_name || 'moter@'}! Pago aprobado.`);
+          carrito.clear(); persist(); pintarCarrito();
+        }),
+        onError:(err)=>{ console.error(err); alert('Error con el pago. Si usas COP y falla, cambia PAYPAL_CURRENCY a USD.'); }
+      }).render('#paypal-button-container');
+    }
+
+    /* =========================
+       EVENTOS
+       ========================= */
+    document.addEventListener('click', e=>{
+      const addBtn=e.target.closest('[data-add]'); if(addBtn) add(+addBtn.dataset.add);
+      const incBtn=e.target.closest('[data-inc]'); if(incBtn) add(+incBtn.dataset.inc);
+      const decBtn=e.target.closest('[data-dec]'); if(decBtn) dec(+decBtn.dataset.dec);
+      const delBtn=e.target.closest('[data-del]'); if(delBtn) del(+delBtn.dataset.del);
+    });
+    el.select.addEventListener('change', filtrar);
+    el.btnVaciar.addEventListener('click', ()=>{ if(confirm('¿Vaciar carrito?')){ carrito.clear(); persist(); pintarCarrito(); }});
+    el.btnFinal.addEventListener('click', ()=>{
+      if(carrito.size===0) return alert('Carrito vacío.');
+      alert('Pedido confirmado (simulado).'); carrito.clear(); persist(); pintarCarrito();
+    });
+
+    /* =========================
+       INIT
+       ========================= */
+    (function init(){
+      cargarFiltro();
+      renderProductos(productos);
+      load();
+      pintarCarrito();
+      document.getElementById('main')?.focus({preventScroll:true});
+    })();
+  </script>
+</body>
+</html>
